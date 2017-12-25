@@ -1,8 +1,6 @@
 package jp.techacademy.tanooka.hiroshi.taskapp;
 
-import android.content.ContentResolver;
 import android.content.Context;
-import android.support.annotation.Nullable;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -13,10 +11,6 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
-
-/**
- * Created by Tanooka on 2017/12/22.
- */
 
 public class TaskAdapter extends BaseAdapter {
     private LayoutInflater mLayoutInflater = null;
@@ -58,8 +52,12 @@ public class TaskAdapter extends BaseAdapter {
 
         SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.JAPANESE);
         Date date = mTaskList.get(position).getDate();
-        textView2.setText(simpleDateFormat.format(date));
-
+        String category = mTaskList.get(position).getCategory();
+        if (category.length() != 0) {
+            textView2.setText(category + "  /  " + simpleDateFormat.format(date));
+        } else {
+            textView2.setText(simpleDateFormat.format(date));
+        }
         return convertView;
     }
 }
