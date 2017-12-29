@@ -4,30 +4,39 @@ import android.app.AlarmManager;
 import android.app.DatePickerDialog;
 import android.app.PendingIntent;
 import android.app.TimePickerDialog;
+import android.app.VoiceInteractor;
 import android.content.Intent;
+import android.renderscript.ScriptGroup;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
+import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.DatePicker;
 import android.widget.EditText;
+import android.widget.Spinner;
 import android.widget.TimePicker;
 
 import java.util.Calendar;
 import java.util.Date;
 import java.util.GregorianCalendar;
 
+import io.realm.Case;
 import io.realm.Realm;
 import io.realm.RealmResults;
+import io.realm.Sort;
 
 public class InputActivity extends AppCompatActivity {
 
     private int mYear, mMonth, mDay, mHour, mMinute;
     private Button mDateButton, mTimeButton;
     private EditText mTitleEdit, mContentEdit, mCategoryEdit;
+    private Spinner mCategorySelect;
+    private ArrayAdapter<String> mCategoryAdapter;
     private Task mTask;
+    private Realm mRealm;
     private View.OnClickListener mOnDateClickListener = new View.OnClickListener() {
         @Override
         public void onClick(View v) {
@@ -71,6 +80,14 @@ public class InputActivity extends AppCompatActivity {
         }
     };
 
+    private View.OnClickListener mOnCategoryClickListener = new View.OnClickListener() {
+        @Override
+        public void onClick(View v) {
+            Intent intent = new Intent(InputActivity.this, CategoryActivity.class);
+            startActivity(intent);
+        }
+    };
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -83,7 +100,8 @@ public class InputActivity extends AppCompatActivity {
             getSupportActionBar().setDisplayHomeAsUpEnabled(true);
         }
 
-        Log.d("InputActivity", "BeforeUiParts");
+
+        mRealm = Realm.getDefaultInstance();
 
         // UI部品の設定
         mDateButton = (Button)findViewById(R.id.date_button);
@@ -93,9 +111,15 @@ public class InputActivity extends AppCompatActivity {
         Log.d("InputActivity", "times_button");
         mTimeButton.setOnClickListener(mOnTimeClickListener);
         findViewById(R.id.done_button).setOnClickListener(mOnDoneClickListener);
+        findViewById(R.id.category_edit_button).setOnClickListener(mOnCategoryClickListener);
         mTitleEdit = (EditText)findViewById(R.id.title_edit_text);
         mContentEdit = (EditText)findViewById(R.id.content_edit_text);
-        mCategoryEdit = (EditText)findViewById(R.id.category_edit_text);
+        mCategorySelect = (Spinner)findViewById(R.id.category_select);
+        mCategoryAdapter = new ArrayAdapter<String>(this, android.R.layout.simple_spinner_item);
+        mCategoryAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        mCategorySelect.setAdapter(mCategoryAdapter);
+        reloadCategory();
+//        mCategoryEdit = (EditText)findViewById(R.id.category_edit_text);
 
         // EXTRA_TASKからTaskのidを取得して、idからTaskのインスタンスを取得する
         Intent intent = getIntent();
@@ -155,16 +179,18 @@ public class InputActivity extends AppCompatActivity {
 
         String title = mTitleEdit.getText().toString();
         String content = mContentEdit.getText().toString();
-        String category = mCategoryEdit.getText().toString();
+//        String category = mCategoryEdit.getText().toString();
 
         mTask.setTitle(title);
         mTask.setContents(content);
-        mTask.setCategory(category);
+//        mTask.setCategory(category);
+        // スピナーの選択結果を受け取って、カテゴリを設定する
+
         GregorianCalendar calendar = new GregorianCalendar(mYear, mMonth, mDay, mHour, mMinute);
         Date date = calendar.getTime();
         mTask.setDate(date);
 
-        Log.d("TASK_PROPERTY", String.valueOf(category));
+//        Log.d("TASK_PROPERTY", String.valueOf(category));
 
         realm.copyToRealmOrUpdate(mTask);
         realm.commitTransaction();
@@ -182,5 +208,19 @@ public class InputActivity extends AppCompatActivity {
 
         AlarmManager alarmManager = (AlarmManager)getSystemService(ALARM_SERVICE);
         alarmManager.set(AlarmManager.RTC_WAKEUP, calendar.getTimeInMillis(), resultPendingIntent);
+    }
+
+    private void reloadCategory() {
+        RealmResults<Category> categoryRealmResults = mRealm.where(Category.class).findAllSorted("id", Sort.ASCENDING);
+        mCategoryAdapter.clear();
+        for (Category category: categoryRealmResults) {
+            mCategoryAdapter.add(category.getCategory());
+        }
+        mCategoryAdapter.notifyDataSetChanged();
+    }
+
+    protected void onResume() {
+        super.onResume();
+        reloadCategory();
     }
 }

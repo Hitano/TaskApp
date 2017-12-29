@@ -22,4 +22,13 @@
         android:src="@drawable/plus"
         app:backgroundTint="@color/colorPrimary" />
 
+    <EditText
+        android:id="@+id/search_edit_text"
+        android:layout_width="280dp"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom|start"
+        android:layout_margin="16dp"
+        android:hint="カテゴリ検索"
+        android:singleLine="true" />
+
 </android.support.design.widget.CoordinatorLayout>

@@ -8,16 +8,21 @@ import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
+import android.text.Editable;
+import android.text.TextWatcher;
+import android.util.Log;
 import android.view.View;
 import android.widget.AdapterView;
+import android.widget.EditText;
 import android.widget.ListView;
 
+import io.realm.Case;
 import io.realm.Realm;
 import io.realm.RealmChangeListener;
 import io.realm.RealmResults;
 import io.realm.Sort;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity implements TextWatcher {
     public final static String EXTRA_TASK = "jp.techacademy.hiroshi.tanooka.taskapp.TASK";
 
     private Realm mRealm;
@@ -29,13 +34,14 @@ public class MainActivity extends AppCompatActivity {
     };
     private ListView mListView;
     private TaskAdapter mTaskAdapter;
+    private EditText mSearchText;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
+        FloatingActionButton fab = (FloatingActionButton)findViewById(R.id.fab);
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -50,7 +56,11 @@ public class MainActivity extends AppCompatActivity {
 
         // ListViewの設定
         mTaskAdapter = new TaskAdapter(MainActivity.this);
-        mListView = (ListView) findViewById(R.id.listView1);
+        mListView = (ListView)findViewById(R.id.listView1);
+
+        // SearchTextの設定
+        mSearchText = (EditText)findViewById(R.id.search_edit_text);
+        mSearchText.addTextChangedListener(this);
 
         // ListViewをタップしたときの処理
         mListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
@@ -114,9 +124,30 @@ public class MainActivity extends AppCompatActivity {
         reloadListView();
     }
 
+    // 検索欄が変更されたときにListViewを更新する
+    @Override
+    public void beforeTextChanged (CharSequence s, int start, int count, int after) {
+        reloadListView();
+    }
+
+    @Override
+    public void onTextChanged (CharSequence s, int start, int before, int after) {
+        reloadListView();
+    }
+
+    @Override
+    public void afterTextChanged (Editable e) {
+        reloadListView();
+    }
+
     private void reloadListView() {
-        // Realmデータベースから、｢全てのデータを取得して新しい日時順に並べた結果｣を取得
-        RealmResults<Task> taskRealmResults = mRealm.where(Task.class).findAllSorted("date", Sort.DESCENDING);
+        RealmResults<Task> taskRealmResults;
+        // (検索欄に入力がない場合) Realmデータベースから、｢全てのデータを取得して新しい日時順に並べた結果｣を取得
+        if (mSearchText.getText().toString().length() == 0) {
+            taskRealmResults = mRealm.where(Task.class).findAllSorted("date", Sort.DESCENDING);
+        } else {    // 検索条件に完全に合致するタスクだけを表示
+            taskRealmResults = mRealm.where(Task.class).equalTo("category", mSearchText.getText().toString(), Case.INSENSITIVE).findAllSorted("date", Sort.DESCENDING);
+        }
         // 上記の結果を、TaskListとしてセットする
         mTaskAdapter.setTaskList(mRealm.copyFromRealm(taskRealmResults));
         // TaskのListView用のアダプタに渡す

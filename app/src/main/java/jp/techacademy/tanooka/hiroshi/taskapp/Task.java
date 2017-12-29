@@ -6,13 +6,10 @@ import java.util.Date;
 import io.realm.RealmObject;
 import io.realm.annotations.PrimaryKey;
 
-/**
- * Created by Tanooka on 2017/12/22.
- */
-
 public class Task extends RealmObject implements Serializable {
     private String title;
     private String contents;
+    private String category;
     private Date date;
 
     // id をプライマリーキーとして設定
@@ -49,5 +46,13 @@ public class Task extends RealmObject implements Serializable {
 
     public void setId(int id) {
         this.id = id;
+    }
+
+    public String getCategory() {
+        return category;
+    }
+
+    public void setCategory(Category category) {
+        this.category = category.getCategory();
     }
 }
